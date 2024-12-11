@@ -1,0 +1,57 @@
+1. Interval Operator ke Saath Polling
+
+    Polling ek common technique hai jisme hum specific intervals (e.g., har 5 seconds) par API call karte hain aur naye data ko update karte hain.
+    RxJS mein, interval operator ke through aap specific interval par API request bhej sakte hain. Aap is data ko subscribe karke Angular component mein update kar sakte hain.
+
+Example:
+
+import { interval, switchMap } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+
+constructor(private http: HttpClient) {}
+
+ngOnInit() {
+  interval(5000)  // 5000ms = 5 seconds
+    .pipe(
+      switchMap(() => this.http.get('https://api.example.com/stock-data')) // API call
+    )
+    .subscribe(data => {
+      this.stockData = data; // API se aaya data ko component mein store karein
+    });
+}
+
+    Yahan interval har 5 seconds ke baad new API call karega.
+    switchMap pichle request ko cancel karke naya request initiate karega agar interval repeat ho raha hai, jo performance improve karta hai aur unnecessary requests ko avoid karta hai.
+
+2. WebSocket ke Saath API ko Integrate Karna
+
+Agar aap real-time aur frequent updates chahte hain bina multiple API requests ke, to WebSocket ko backend ke saath setup karna ek best solution ho sakta hai. WebSocket ke madhyam se, backend changes ko automatically frontend par push kar sakta hai bina baar-baar API calls ke. Yahan aapko RxJS mein WebSocketSubject ka use karna padega.
+
+Example:
+
+import { WebSocketSubject } from 'rxjs/webSocket';
+
+private stockUpdates$ = new WebSocketSubject('wss://api.example.com/stock-updates'); // WebSocket URL
+
+ngOnInit() {
+  this.stockUpdates$.subscribe(data => {
+    this.stockData = data; // Real-time data ko component mein store karna
+  });
+}
+
+    Is approach mein backend se data push hota rahega jab bhi update ho, bina client se baar-baar request bhejne ke.
+
+3. Combination of Polling aur Conditional Updates
+
+Agar aap full WebSocket setup nahi kar sakte, to aap hybrid approach use kar sakte hain:
+
+    Interval-based polling + data caching + conditional updates (jisme aap sirf tabhi update karte hain jab data change ho).
+    Ismein aap interval ke saath data compare kar sakte hain aur only if change detected tabhi update karenge.
+
+Summary
+
+    Polling (interval + switchMap): Simple aur effective, lekin ismein baar-baar API calls hote hain.
+    WebSocket: Real-time data streaming ke liye best solution hai, lekin backend setup required hai.
+    Hybrid Approach: Agar full WebSocket setup nahi ho sakta, to interval polling ke saath data comparison logic lagaya ja sakta hai.
+
+Aapke stock market jaise real-time application ke liye, ideally WebSocket solution best rahega agar backend support ho. Warna, aap interval polling ke saath efficient RxJS operators ka use kar sakte hain.
